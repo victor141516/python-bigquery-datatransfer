@@ -26,6 +26,7 @@ import google.api_core.gapic_v1.client_info
 import google.api_core.gapic_v1.config
 import google.api_core.gapic_v1.method
 import google.api_core.path_template
+import google.api_core.path_template
 import google.api_core.gapic_v1.routing_header
 import google.api_core.grpc_helpers
 import google.api_core.page_iterator
@@ -232,6 +233,7 @@ class DataTransferServiceClient(object):
                 Client options used to set user options on the client. API Endpoint
                 should be set through client_options.
 
+
         """
         # Raise deprecation warnings for things we want to go away.
         if client_config is not None:
@@ -325,9 +327,10 @@ class DataTransferServiceClient(object):
             >>> response = client.get_data_source(name)
 
         Args:
-            name (str): Required. The field will contain name of the resource requested, for
-                example: ``projects/{project_id}/dataSources/{data_source_id}`` or
-                ``projects/{project_id}/locations/{location_id}/dataSources/{data_source_id}``
+            name (str): Start time of the range of transfer runs. For example,
+                ``"2017-05-25T00:00:00+00:00"``. The start_time must be strictly less
+                than the end_time. Creates transfer runs where run_time is in the range
+                betwen start_time (inclusive) and end_time (exlusive).
             retry (Optional[google.api_core.retry.Retry]):  A retry object used
                 to retry requests. If ``None`` is specified, requests will
                 be retried using a default configuration.
@@ -410,9 +413,9 @@ class DataTransferServiceClient(object):
             ...         pass
 
         Args:
-            parent (str): Required. The BigQuery project id for which data sources should be
-                returned. Must be in the form: ``projects/{project_id}`` or
-                \`projects/{project_id}/locations/{location_id}
+            parent (str): Signed seconds of the span of time. Must be from -315,576,000,000 to
+                +315,576,000,000 inclusive. Note: these bounds are computed from: 60
+                sec/min \* 60 min/hr \* 24 hr/day \* 365.25 days/year \* 10000 years
             page_size (int): The maximum number of resources contained in the
                 underlying API response. If page streaming is performed per-
                 resource, this parameter does not affect the return value. If page
@@ -509,37 +512,48 @@ class DataTransferServiceClient(object):
             >>> response = client.create_transfer_config(parent, transfer_config)
 
         Args:
-            parent (str): Required. The BigQuery project id where the transfer configuration
-                should be created. Must be in the format
-                projects/{project_id}/locations/{location_id} or projects/{project_id}.
-                If specified location and location of the destination bigquery dataset
-                do not match - the request will fail.
+            parent (str): Signed fractions of a second at nanosecond resolution of the span of
+                time. Durations less than one second are represented with a 0
+                ``seconds`` field and a positive or negative ``nanos`` field. For
+                durations of one second or more, a non-zero value for the ``nanos``
+                field must be of the same sign as the ``seconds`` field. Must be from
+                -999,999,999 to +999,999,999 inclusive.
             transfer_config (Union[dict, ~google.cloud.bigquery_datatransfer_v1.types.TransferConfig]): Required. Data transfer configuration to create.
 
                 If a dict is provided, it must be of the same form as the protobuf
                 message :class:`~google.cloud.bigquery_datatransfer_v1.types.TransferConfig`
-            authorization_code (str): Optional OAuth2 authorization code to use with this transfer
-                configuration. This is required if new credentials are needed, as
-                indicated by ``CheckValidCreds``. In order to obtain authorization_code,
-                please make a request to
-                https://www.gstatic.com/bigquerydatatransfer/oauthz/auth?client_id=&scope=<data_source_scopes>&redirect_uri=<redirect_uri>
+            authorization_code (str): Required. Name of transfer configuration for which transfer runs
+                should be retrieved. Format of transfer configuration resource name is:
+                ``projects/{project_id}/transferConfigs/{config_id}`` or
+                ``projects/{project_id}/locations/{location_id}/transferConfigs/{config_id}``.
+            version_info (str): Should this field be parsed lazily? Lazy applies only to
+                message-type fields. It means that when the outer message is initially
+                parsed, the inner message's contents will not be parsed but instead
+                stored in encoded form. The inner message will actually be parsed when
+                it is first accessed.
 
-                -  client_id should be OAuth client_id of BigQuery DTS API for the given
-                   data source returned by ListDataSources method.
-                -  data_source_scopes are the scopes returned by ListDataSources method.
-                -  redirect_uri is an optional parameter. If not specified, then
-                   authorization code is posted to the opener of authorization flow
-                   window. Otherwise it will be sent to the redirect uri. A special
-                   value of urn:ietf:wg:oauth:2.0:oob means that authorization code
-                   should be returned in the title bar of the browser, with the page
-                   text prompting the user to copy the code and paste it in the
-                   application.
-            version_info (str): Optional version info. If users want to find a very recent access
-                token, that is, immediately after approving access, users have to set
-                the version_info claim in the token request. To obtain the version_info,
-                users must use the "none+gsession" response type. which be return a
-                version_info back in the authorization response which be be put in a JWT
-                claim in the token request.
+                This is only a hint. Implementations are free to choose whether to use
+                eager or lazy parsing regardless of the value of this option. However,
+                setting this option true suggests that the protocol author believes that
+                using lazy parsing on this field is worth the additional bookkeeping
+                overhead typically needed to implement it.
+
+                This option does not affect the public interface of any generated code;
+                all method signatures remain the same. Furthermore, thread-safety of the
+                interface is not affected by this option; const methods remain safe to
+                call from multiple threads concurrently, while non-const methods
+                continue to require exclusive access.
+
+                Note that implementations may choose not to check required fields within
+                a lazy sub-message. That is, calling IsInitialized() on the outer
+                message may return true even if the inner message has missing required
+                fields. This is necessary because otherwise the inner message would have
+                to be parsed in order to perform the check, defeating the purpose of
+                lazy parsing. An implementation which chooses not to check required
+                fields must be consistent about it. That is, for any particular
+                sub-message, the implementation must either *always* check its required
+                fields, or *never* check its required fields, regardless of whether or
+                not the message has been parsed.
             service_account_name (str): Optional service account name. If this field is set, transfer config will
                 be created with this service account credentials. It requires that
                 requesting user calling this API has permissions to act as this service
@@ -635,33 +649,29 @@ class DataTransferServiceClient(object):
 
                 If a dict is provided, it must be of the same form as the protobuf
                 message :class:`~google.cloud.bigquery_datatransfer_v1.types.FieldMask`
-            authorization_code (str): Optional OAuth2 authorization code to use with this transfer
-                configuration. If it is provided, the transfer configuration will be
-                associated with the authorizing user. In order to obtain
-                authorization_code, please make a request to
-                https://www.gstatic.com/bigquerydatatransfer/oauthz/auth?client_id=&scope=<data_source_scopes>&redirect_uri=<redirect_uri>
+            authorization_code (str): Optional. The historical or future-looking state of the resource
+                pattern.
 
-                -  client_id should be OAuth client_id of BigQuery DTS API for the given
-                   data source returned by ListDataSources method.
-                -  data_source_scopes are the scopes returned by ListDataSources method.
-                -  redirect_uri is an optional parameter. If not specified, then
-                   authorization code is posted to the opener of authorization flow
-                   window. Otherwise it will be sent to the redirect uri. A special
-                   value of urn:ietf:wg:oauth:2.0:oob means that authorization code
-                   should be returned in the title bar of the browser, with the page
-                   text prompting the user to copy the code and paste it in the
-                   application.
-            version_info (str): Optional version info. If users want to find a very recent access
-                token, that is, immediately after approving access, users have to set
-                the version_info claim in the token request. To obtain the version_info,
-                users must use the "none+gsession" response type. which be return a
-                version_info back in the authorization response which be be put in a JWT
-                claim in the token request.
-            service_account_name (str): Optional service account name. If this field is set and
-                "service_account_name" is set in update_mask, transfer config will be
-                updated to use this service account credentials. It requires that
-                requesting user calling this API has permissions to act as this service
-                account.
+                Example:
+
+                ::
+
+                    // The InspectTemplate message originally only supported resource
+                    // names with organization, and project was added later.
+                    message InspectTemplate {
+                      option (google.api.resource) = {
+                        type: "dlp.googleapis.com/InspectTemplate"
+                        pattern:
+                        "organizations/{organization}/inspectTemplates/{inspect_template}"
+                        pattern: "projects/{project}/inspectTemplates/{inspect_template}"
+                        history: ORIGINALLY_SINGLE_PATTERN
+                      };
+                    }
+            version_info (str): Transfer configuration name in the form:
+                ``projects/{project_id}/transferConfigs/{config_id}`` or
+                ``projects/{project_id}/locations/{location_id}/transferConfigs/{config_id}``.
+            service_account_name (str): Required. Start time of the range of transfer runs. For example,
+                ``"2017-05-25T00:00:00+00:00"``.
             retry (Optional[google.api_core.retry.Retry]):  A retry object used
                 to retry requests. If ``None`` is specified, requests will
                 be retried using a default configuration.
@@ -737,9 +747,13 @@ class DataTransferServiceClient(object):
             >>> client.delete_transfer_config(name)
 
         Args:
-            name (str): Required. The field will contain name of the resource requested, for
-                example: ``projects/{project_id}/transferConfigs/{config_id}`` or
-                ``projects/{project_id}/locations/{location_id}/transferConfigs/{config_id}``
+            name (str): The resource name of the transfer config. Transfer config names have
+                the form of
+                ``projects/{project_id}/locations/{region}/transferConfigs/{config_id}``.
+                The name is automatically generated based on the config_id specified in
+                CreateTransferConfigRequest along with project_id and region. If
+                config_id is not provided, usually a uuid, even though it is not
+                guaranteed or required, will be generated for config_id.
             retry (Optional[google.api_core.retry.Retry]):  A retry object used
                 to retry requests. If ``None`` is specified, requests will
                 be retried using a default configuration.
@@ -805,9 +819,37 @@ class DataTransferServiceClient(object):
             >>> response = client.get_transfer_config(name)
 
         Args:
-            name (str): Required. The field will contain name of the resource requested, for
-                example: ``projects/{project_id}/transferConfigs/{config_id}`` or
-                ``projects/{project_id}/locations/{location_id}/transferConfigs/{config_id}``
+            name (str): Protocol Buffers - Google's data interchange format Copyright 2008
+                Google Inc. All rights reserved.
+                https://developers.google.com/protocol-buffers/
+
+                Redistribution and use in source and binary forms, with or without
+                modification, are permitted provided that the following conditions are
+                met:
+
+                ::
+
+                    * Redistributions of source code must retain the above copyright
+
+                notice, this list of conditions and the following disclaimer. \*
+                Redistributions in binary form must reproduce the above copyright
+                notice, this list of conditions and the following disclaimer in the
+                documentation and/or other materials provided with the distribution. \*
+                Neither the name of Google Inc. nor the names of its contributors may be
+                used to endorse or promote products derived from this software without
+                specific prior written permission.
+
+                THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
+                IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
+                TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
+                PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER
+                OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+                EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+                PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+                PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+                LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+                NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+                SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             retry (Optional[google.api_core.retry.Retry]):  A retry object used
                 to retry requests. If ``None`` is specified, requests will
                 be retried using a default configuration.
@@ -890,9 +932,7 @@ class DataTransferServiceClient(object):
             ...         pass
 
         Args:
-            parent (str): Required. The BigQuery project id for which data sources should be
-                returned: ``projects/{project_id}`` or
-                ``projects/{project_id}/locations/{location_id}``
+            parent (str): See ``HttpRule``.
             data_source_ids (list[str]): When specified, only configurations of requested data sources are returned.
             page_size (int): The maximum number of resources contained in the
                 underlying API response. If page streaming is performed per-
@@ -973,10 +1013,9 @@ class DataTransferServiceClient(object):
         metadata=None,
     ):
         """
-        Creates transfer runs for a time range [start_time, end_time]. For
-        each date - or whatever granularity the data source supports - in the
-        range, one transfer run is created. Note that runs are created per UTC
-        time in the time range. DEPRECATED: use StartManualTransferRuns instead.
+        If type_name is set, this need not be set. If both this and
+        type_name are set, this must be one of TYPE_ENUM, TYPE_MESSAGE or
+        TYPE_GROUP.
 
         Example:
             >>> from google.cloud import bigquery_datatransfer_v1
@@ -994,16 +1033,28 @@ class DataTransferServiceClient(object):
             >>> response = client.schedule_transfer_runs(parent, start_time, end_time)
 
         Args:
-            parent (str): Required. Transfer configuration name in the form:
-                ``projects/{project_id}/transferConfigs/{config_id}`` or
-                ``projects/{project_id}/locations/{location_id}/transferConfigs/{config_id}``.
-            start_time (Union[dict, ~google.cloud.bigquery_datatransfer_v1.types.Timestamp]): Required. Start time of the range of transfer runs. For example,
-                ``"2017-05-25T00:00:00+00:00"``.
+            parent (str): The name of the uninterpreted option. Each string represents a
+                segment in a dot-separated name. is_extension is true iff a segment
+                represents an extension (denoted with parentheses in options specs in
+                .proto files). E.g.,{ ["foo", false], ["bar.baz", true], ["qux", false]
+                } represents "foo.(bar.baz).qux".
+            start_time (Union[dict, ~google.cloud.bigquery_datatransfer_v1.types.Timestamp]): A generic empty message that you can re-use to avoid defining
+                duplicated empty messages in your APIs. A typical example is to use it
+                as the request or the response type of an API method. For instance:
+
+                ::
+
+                    service Foo {
+                      rpc Bar(google.protobuf.Empty) returns (google.protobuf.Empty);
+                    }
+
+                The JSON representation for ``Empty`` is empty JSON object ``{}``.
 
                 If a dict is provided, it must be of the same form as the protobuf
                 message :class:`~google.cloud.bigquery_datatransfer_v1.types.Timestamp`
-            end_time (Union[dict, ~google.cloud.bigquery_datatransfer_v1.types.Timestamp]): Required. End time of the range of transfer runs. For example,
-                ``"2017-05-30T00:00:00+00:00"``.
+            end_time (Union[dict, ~google.cloud.bigquery_datatransfer_v1.types.Timestamp]): The resource has one pattern, but the API owner expects to add more
+                later. (This is the inverse of ORIGINALLY_SINGLE_PATTERN, and prevents
+                that from being necessary once there are multiple patterns.)
 
                 If a dict is provided, it must be of the same form as the protobuf
                 message :class:`~google.cloud.bigquery_datatransfer_v1.types.Timestamp`
@@ -1067,10 +1118,11 @@ class DataTransferServiceClient(object):
         metadata=None,
     ):
         """
-        Start manual transfer runs to be executed now with schedule_time
-        equal to current time. The transfer runs can be created for a time range
-        where the run_time is between start_time (inclusive) and end_time
-        (exclusive), or for a specific run_time.
+        Pagination token, which can be used to request a specific page of
+        ``ListTransferRunsRequest`` list results. For multiple-page results,
+        ``ListTransferRunsResponse`` outputs a ``next_page`` token, which can be
+        used as the ``page_token`` value to request the next page of list
+        results.
 
         Example:
             >>> from google.cloud import bigquery_datatransfer_v1
@@ -1080,15 +1132,134 @@ class DataTransferServiceClient(object):
             >>> response = client.start_manual_transfer_runs()
 
         Args:
-            parent (str): Transfer configuration name in the form:
-                ``projects/{project_id}/transferConfigs/{config_id}`` or
-                ``projects/{project_id}/locations/{location_id}/transferConfigs/{config_id}``.
+            parent (str): A Timestamp represents a point in time independent of any time zone
+                or local calendar, encoded as a count of seconds and fractions of
+                seconds at nanosecond resolution. The count is relative to an epoch at
+                UTC midnight on January 1, 1970, in the proleptic Gregorian calendar
+                which extends the Gregorian calendar backwards to year one.
+
+                All minutes are 60 seconds long. Leap seconds are "smeared" so that no
+                leap second table is needed for interpretation, using a `24-hour linear
+                smear <https://developers.google.com/time/smear>`__.
+
+                The range is from 0001-01-01T00:00:00Z to
+                9999-12-31T23:59:59.999999999Z. By restricting to that range, we ensure
+                that we can convert to and from `RFC
+                3339 <https://www.ietf.org/rfc/rfc3339.txt>`__ date strings.
+
+                # Examples
+
+                Example 1: Compute Timestamp from POSIX ``time()``.
+
+                ::
+
+                    Timestamp timestamp;
+                    timestamp.set_seconds(time(NULL));
+                    timestamp.set_nanos(0);
+
+                Example 2: Compute Timestamp from POSIX ``gettimeofday()``.
+
+                ::
+
+                    struct timeval tv;
+                    gettimeofday(&tv, NULL);
+
+                    Timestamp timestamp;
+                    timestamp.set_seconds(tv.tv_sec);
+                    timestamp.set_nanos(tv.tv_usec * 1000);
+
+                Example 3: Compute Timestamp from Win32 ``GetSystemTimeAsFileTime()``.
+
+                ::
+
+                    FILETIME ft;
+                    GetSystemTimeAsFileTime(&ft);
+                    UINT64 ticks = (((UINT64)ft.dwHighDateTime) << 32) | ft.dwLowDateTime;
+
+                    // A Windows tick is 100 nanoseconds. Windows epoch 1601-01-01T00:00:00Z
+                    // is 11644473600 seconds before Unix epoch 1970-01-01T00:00:00Z.
+                    Timestamp timestamp;
+                    timestamp.set_seconds((INT64) ((ticks / 10000000) - 11644473600LL));
+                    timestamp.set_nanos((INT32) ((ticks % 10000000) * 100));
+
+                Example 4: Compute Timestamp from Java ``System.currentTimeMillis()``.
+
+                ::
+
+                    long millis = System.currentTimeMillis();
+
+                    Timestamp timestamp = Timestamp.newBuilder().setSeconds(millis / 1000)
+                        .setNanos((int) ((millis % 1000) * 1000000)).build();
+
+                Example 5: Compute Timestamp from current time in Python.
+
+                ::
+
+                    timestamp = Timestamp()
+                    timestamp.GetCurrentTime()
+
+                # JSON Mapping
+
+                In JSON format, the Timestamp type is encoded as a string in the `RFC
+                3339 <https://www.ietf.org/rfc/rfc3339.txt>`__ format. That is, the
+                format is "{year}-{month}-{day}T{hour}:{min}:{sec}[.{frac_sec}]Z" where
+                {year} is always expressed using four digits while {month}, {day},
+                {hour}, {min}, and {sec} are zero-padded to two digits each. The
+                fractional seconds, which can go up to 9 digits (i.e. up to 1 nanosecond
+                resolution), are optional. The "Z" suffix indicates the timezone
+                ("UTC"); the timezone is required. A proto3 JSON serializer should
+                always use UTC (as indicated by "Z") when printing the Timestamp type
+                and a proto3 JSON parser should be able to accept both UTC and other
+                timezones (as indicated by an offset).
+
+                For example, "2017-01-15T01:30:15.01Z" encodes 15.01 seconds past 01:30
+                UTC on January 15, 2017.
+
+                In JavaScript, one can convert a Date object to this format using the
+                standard
+                `toISOString() <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date/toISOString>`__
+                method. In Python, a standard ``datetime.datetime`` object can be
+                converted to this format using
+                ```strftime`` <https://docs.python.org/2/library/time.html#time.strftime>`__
+                with the time format spec '%Y-%m-%dT%H:%M:%S.%fZ'. Likewise, in Java,
+                one can use the Joda Time's
+                ```ISODateTimeFormat.dateTime()`` <http://www.joda.org/joda-time/apidocs/org/joda/time/format/ISODateTimeFormat.html#dateTime%2D%2D>`__
+                to obtain a formatter capable of generating timestamps in this format.
             requested_time_range (Union[dict, ~google.cloud.bigquery_datatransfer_v1.types.TimeRange]): Time range for the transfer runs that should be started.
 
                 If a dict is provided, it must be of the same form as the protobuf
                 message :class:`~google.cloud.bigquery_datatransfer_v1.types.TimeRange`
-            requested_run_time (Union[dict, ~google.cloud.bigquery_datatransfer_v1.types.Timestamp]): Specific run_time for a transfer run to be started. The
-                requested_run_time must not be in the future.
+            requested_run_time (Union[dict, ~google.cloud.bigquery_datatransfer_v1.types.Timestamp]): Protocol Buffers - Google's data interchange format Copyright 2008
+                Google Inc. All rights reserved.
+                https://developers.google.com/protocol-buffers/
+
+                Redistribution and use in source and binary forms, with or without
+                modification, are permitted provided that the following conditions are
+                met:
+
+                ::
+
+                    * Redistributions of source code must retain the above copyright
+
+                notice, this list of conditions and the following disclaimer. \*
+                Redistributions in binary form must reproduce the above copyright
+                notice, this list of conditions and the following disclaimer in the
+                documentation and/or other materials provided with the distribution. \*
+                Neither the name of Google Inc. nor the names of its contributors may be
+                used to endorse or promote products derived from this software without
+                specific prior written permission.
+
+                THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
+                IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
+                TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
+                PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER
+                OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+                EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+                PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+                PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+                LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+                NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+                SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
                 If a dict is provided, it must be of the same form as the protobuf
                 message :class:`~google.cloud.bigquery_datatransfer_v1.types.Timestamp`
@@ -1171,10 +1342,8 @@ class DataTransferServiceClient(object):
             >>> response = client.get_transfer_run(name)
 
         Args:
-            name (str): Required. The field will contain name of the resource requested, for
-                example:
-                ``projects/{project_id}/transferConfigs/{config_id}/runs/{run_id}`` or
-                ``projects/{project_id}/locations/{location_id}/transferConfigs/{config_id}/runs/{run_id}``
+            name (str): An annotation that describes a resource definition, see
+                ``ResourceDescriptor``.
             retry (Optional[google.api_core.retry.Retry]):  A retry object used
                 to retry requests. If ``None`` is specified, requests will
                 be retried using a default configuration.
@@ -1243,10 +1412,22 @@ class DataTransferServiceClient(object):
             >>> client.delete_transfer_run(name)
 
         Args:
-            name (str): Required. The field will contain name of the resource requested, for
-                example:
-                ``projects/{project_id}/transferConfigs/{config_id}/runs/{run_id}`` or
-                ``projects/{project_id}/locations/{location_id}/transferConfigs/{config_id}/runs/{run_id}``
+            name (str): Optional OAuth2 authorization code to use with this transfer
+                configuration. This is required if new credentials are needed, as
+                indicated by ``CheckValidCreds``. In order to obtain authorization_code,
+                please make a request to
+                https://www.gstatic.com/bigquerydatatransfer/oauthz/auth?client_id=&scope=<data_source_scopes>&redirect_uri=<redirect_uri>
+
+                -  client_id should be OAuth client_id of BigQuery DTS API for the given
+                   data source returned by ListDataSources method.
+                -  data_source_scopes are the scopes returned by ListDataSources method.
+                -  redirect_uri is an optional parameter. If not specified, then
+                   authorization code is posted to the opener of authorization flow
+                   window. Otherwise it will be sent to the redirect uri. A special
+                   value of urn:ietf:wg:oauth:2.0:oob means that authorization code
+                   should be returned in the title bar of the browser, with the page
+                   text prompting the user to copy the code and paste it in the
+                   application.
             retry (Optional[google.api_core.retry.Retry]):  A retry object used
                 to retry requests. If ``None`` is specified, requests will
                 be retried using a default configuration.
@@ -1327,10 +1508,12 @@ class DataTransferServiceClient(object):
             ...         pass
 
         Args:
-            parent (str): Required. Name of transfer configuration for which transfer runs
-                should be retrieved. Format of transfer configuration resource name is:
-                ``projects/{project_id}/transferConfigs/{config_id}`` or
-                ``projects/{project_id}/locations/{location_id}/transferConfigs/{config_id}``.
+            parent (str): Optional version info. If users want to find a very recent access
+                token, that is, immediately after approving access, users have to set
+                the version_info claim in the token request. To obtain the version_info,
+                users must use the "none+gsession" response type. which be return a
+                version_info back in the authorization response which be be put in a JWT
+                claim in the token request.
             states (list[~google.cloud.bigquery_datatransfer_v1.types.TransferState]): When specified, only transfer runs with requested states are returned.
             page_size (int): The maximum number of resources contained in the
                 underlying API response. If page streaming is performed per-
@@ -1436,9 +1619,9 @@ class DataTransferServiceClient(object):
             ...         pass
 
         Args:
-            parent (str): Required. Transfer run name in the form:
-                ``projects/{project_id}/transferConfigs/{config_id}/runs/{run_id}`` or
-                ``projects/{project_id}/locations/{location_id}/transferConfigs/{config_id}/runs/{run_id}``
+            parent (str): ``ListValue`` is a wrapper around a repeated field of values.
+
+                The JSON representation for ``ListValue`` is JSON array.
             page_size (int): The maximum number of resources contained in the
                 underlying API response. If page streaming is performed per-
                 resource, this parameter does not affect the return value. If page
@@ -1535,9 +1718,10 @@ class DataTransferServiceClient(object):
             >>> response = client.check_valid_creds(name)
 
         Args:
-            name (str): Required. The data source in the form:
-                ``projects/{project_id}/dataSources/{data_source_id}`` or
-                ``projects/{project_id}/locations/{location_id}/dataSources/{data_source_id}``.
+            name (str): Output only. The next-pagination token. For multiple-page list
+                results, this token can be used as the
+                ``ListTransferConfigsRequest.page_token`` to request the next page of
+                list results.
             retry (Optional[google.api_core.retry.Retry]):  A retry object used
                 to retry requests. If ``None`` is specified, requests will
                 be retried using a default configuration.
