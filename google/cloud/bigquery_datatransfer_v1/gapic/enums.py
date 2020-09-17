@@ -21,16 +21,10 @@ import enum
 
 class NullValue(enum.IntEnum):
     """
-    A designation of a specific field behavior (required, output only,
-    etc.) in protobuf messages.
+    ``NullValue`` is a singleton enumeration to represent the null value
+    for the ``Value`` type union.
 
-    Examples:
-
-    string name = 1 [(google.api.field_behavior) = REQUIRED]; State state =
-    1 [(google.api.field_behavior) = OUTPUT_ONLY]; google.protobuf.Duration
-    ttl = 1 [(google.api.field_behavior) = INPUT_ONLY];
-    google.protobuf.Timestamp expire_time = 1 [(google.api.field_behavior) =
-    OUTPUT_ONLY, (google.api.field_behavior) = IMMUTABLE];
+    The JSON representation for ``NullValue`` is JSON ``null``.
 
     Attributes:
       NULL_VALUE (int): Null value.

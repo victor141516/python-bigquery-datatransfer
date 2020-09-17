@@ -214,9 +214,10 @@ class DataTransferServiceGrpcTransport(object):
     def schedule_transfer_runs(self):
         """Return the gRPC stub for :meth:`DataTransferServiceClient.schedule_transfer_runs`.
 
-        If type_name is set, this need not be set. If both this and
-        type_name are set, this must be one of TYPE_ENUM, TYPE_MESSAGE or
-        TYPE_GROUP.
+        Creates transfer runs for a time range [start_time, end_time]. For
+        each date - or whatever granularity the data source supports - in the
+        range, one transfer run is created. Note that runs are created per UTC
+        time in the time range. DEPRECATED: use StartManualTransferRuns instead.
 
         Returns:
             Callable: A callable which accepts the appropriate
@@ -229,11 +230,10 @@ class DataTransferServiceGrpcTransport(object):
     def start_manual_transfer_runs(self):
         """Return the gRPC stub for :meth:`DataTransferServiceClient.start_manual_transfer_runs`.
 
-        Pagination token, which can be used to request a specific page of
-        ``ListTransferRunsRequest`` list results. For multiple-page results,
-        ``ListTransferRunsResponse`` outputs a ``next_page`` token, which can be
-        used as the ``page_token`` value to request the next page of list
-        results.
+        Start manual transfer runs to be executed now with schedule_time
+        equal to current time. The transfer runs can be created for a time range
+        where the run_time is between start_time (inclusive) and end_time
+        (exclusive), or for a specific run_time.
 
         Returns:
             Callable: A callable which accepts the appropriate
