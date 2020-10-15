@@ -213,7 +213,7 @@ Most utility methods such as `project_path()` have been removed. The paths must
 now be constructed manually:
 
 ```py
-project_path = f"project/{PROJECT_ID}"
+project_path = f"projects/{PROJECT_ID}"
 ```
 
  The only two that remained are `transfer_config_path()` and `parse_transfer_config_path()`.
